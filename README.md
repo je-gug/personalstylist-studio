@@ -1,70 +1,37 @@
-# GitHub Codespaces ♥️ React
+# moodhair · Personal Stylist Studio
 
-Welcome to your shiny new Codespace running React! We've got everything fired up and running for you to explore React.
+사진 한 장으로 주변 8가지 헤어스타일과 가장 어울리는 스타일을 제안하는 React 앱입니다. 중앙은 업로드한 원본을 그대로 표시하며, 주변 이미지는 AI가 만든 3×3 보드에서 각 칸을 보여줍니다. 얼굴 보존 및 칸 경계는 생성 모델의 정확도에 따라 달라질 수 있습니다.
 
-You've got a blank canvas to work on from a git perspective as well. There's a single initial commit with the what you're seeing right now - where you go from here is up to you!
+## 실행
 
-Everything you do here is contained within this one codespace. There is no repository on GitHub yet. If and when you’re ready you can click "Publish Branch" and we’ll create your repository and push up your project. If you were just exploring then and have no further need for this code then you can simply delete your codespace and it's gone forever.
+Node.js 22 이상에서:
 
-This project was bootstrapped for you with [Vite](https://vitejs.dev/).
+```sh
+npm install
+cp .env.example .env
+# .env에 운영자의 OPENAI_API_KEY 설정
+npm run server
+# 별도 터미널
+npm start
+```
 
-## Available Scripts
+프런트엔드: http://localhost:3000, API: http://localhost:3001. API 키는 서버 전용이며 사용자는 키나 개인정보를 입력하지 않습니다. OpenAI 이미지 편집 사용 권한 및 과금 가능한 API 계정이 필요합니다. 키가 없으면 실제 생성 대신 연결 안내를 표시합니다.
 
-In the project directory, you can run:
+```sh
+npm run build
+npm run server
+```
 
-### `npm start`
+프로덕션은 Node 서버가 dist와 API를 함께 제공합니다. 정적 GitHub Pages만으로는 생성 기능이 작동하지 않습니다. 공개 배포 전에는 호스팅 계층에서 요청 제한과 비용 한도를 적용하세요. 기본 서버는 동시 생성을 2건으로 제한합니다.
 
-We've already run this for you in the `Codespaces: server` terminal window below. If you need to stop the server for any reason you can just run `npm start` again to bring it back online.
+## 개인정보 처리
 
-Runs the app in the development mode.\
-Open [http://localhost:3000/](http://localhost:3000/) in the built-in Simple Browser (`Cmd/Ctrl + Shift + P > Simple Browser: Show`) to view your running application.
+- 이름, 연락처, 생년월일, 회원가입 없음.
+- 선택 시 브라우저에서 이미지 재인코딩하여 EXIF 등 원본 파일 메타데이터를 제거합니다.
+- 전송 동의 후에만 사진을 앱 서버와 OpenAI API로 전송합니다.
+- 앱은 사진이나 결과를 파일, DB, 브라우저 저장소에 저장하지 않습니다. 새로고침 또는 지우기로 화면의 참조가 제거됩니다.
+- 외부 AI 서비스 보관 정책은 별도 적용됩니다. https://platform.openai.com/docs/guides/your-data
+- 저장 버튼은 원본 사진을 정확히 중앙에 합성한 JPG를 사용자 기기에 다운로드합니다.
+- AI 추천은 미적 제안이며 실제 미용 시술 결과를 보장하지 않습니다.
 
-The page will reload automatically when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-## Learn More
-
-You can learn more in the [Vite documentation](https://vitejs.dev/guide/).
-
-To learn Vitest, a Vite-native testing framework, go to [Vitest documentation](https://vitest.dev/guide/)
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://sambitsahoo.com/blog/vite-code-splitting-that-works.html](https://sambitsahoo.com/blog/vite-code-splitting-that-works.html)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://github.com/btd/rollup-plugin-visualizer#rollup-plugin-visualizer](https://github.com/btd/rollup-plugin-visualizer#rollup-plugin-visualizer)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://dev.to/hamdankhan364/simplifying-progressive-web-app-pwa-development-with-vite-a-beginners-guide-38cf](https://dev.to/hamdankhan364/simplifying-progressive-web-app-pwa-development-with-vite-a-beginners-guide-38cf)
-
-### Advanced Configuration
-
-This section has moved here: [https://vitejs.dev/guide/build.html#advanced-base-options](https://vitejs.dev/guide/build.html#advanced-base-options)
-
-### Deployment
-
-This section has moved here: [https://vitejs.dev/guide/build.html](https://vitejs.dev/guide/build.html)
-
-### Troubleshooting
-
-This section has moved here: [https://vitejs.dev/guide/troubleshooting.html](https://vitejs.dev/guide/troubleshooting.html)
+검증: `npm test -- --run`, `npm run build`.
