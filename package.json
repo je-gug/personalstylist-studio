@@ -18,9 +18,10 @@
   "scripts": {
     "start": "BROWSER=none WDS_SOCKET_PORT=0 vite --port 3000",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "npm run build && PORT=3000 node --env-file-if-exists=.env server/index.mjs",
     "test": "vitest",
-    "server": "node --env-file-if-exists=.env server/index.mjs"
+    "server": "node --env-file-if-exists=.env server/index.mjs",
+    "dev": "node scripts/dev.mjs"
   },
   "eslintConfig": {
     "extends": [
