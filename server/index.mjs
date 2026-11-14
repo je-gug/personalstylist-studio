@@ -10,7 +10,16 @@ const json = (res, status, data) => { res.writeHead(status, { 'Content-Type': 'a
 async function openai(endpoint, options) {
   const response = await fetch(`https://api.openai.com/v1/${endpoint}`, { ...options, headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, ...options.headers }, signal: AbortSignal.timeout(300000) });
   const data = await response.json();
-  if (!response.ok) throw new Error('AI 서비스에서 요청을 처리하지 못했습니다. 서버의 API 설정 또는 사용 한도를 확인해 주세요.');
+  if (!response.ok) {
+    const messages = {
+      401: 'OpenAI API 키가 유효하지 않습니다. 운영자가 .env의 OPENAI_API_KEY를 확인하고 서버를 재시작해 주세요.',
+      403: 'OpenAI 모델 접근 권한이 없습니다. 운영자가 이미지 생성 모델의 사용 권한을 확인해 주세요.',
+      429: 'OpenAI 사용 한도 또는 요청 제한에 도달했습니다. 운영자가 API 결제와 사용 한도를 확인해 주세요.',
+    };
+    const error = new Error(messages[response.status] || 'OpenAI에서 사진을 처리하지 못했습니다. 다른 사진으로 다시 시도해 주세요.');
+    error.publicMessage = true;
+    throw error;
+  }
   return data;
 }
 export const server = http.createServer(async (req, res) => {
@@ -39,7 +48,7 @@ export const server = http.createServer(async (req, res) => {
       const generated = await openai('images/edits', { method: 'POST', body: form });
       if (!generated.data?.[0]?.b64_json) throw new Error('이미지를 생성하지 못했습니다. 다시 시도해 주세요.');
       return json(res, 200, { image: `data:image/png;base64,${generated.data[0].b64_json}`, best: plan.best, styles: plan.styles.map(({ name, reason }) => ({ name, reason })) });
-    } catch (error) { return json(res, 502, { error: error.name === 'TimeoutError' ? '이미지 생성 시간이 초과됐습니다. 다시 시도해 주세요.' : error.message === 'fetch failed' ? 'AI 서비스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' : '스타일을 생성하지 못했습니다. 사진 또는 서버 API 설정을 확인하고 다시 시도해 주세요.' }); }
+    } catch (error) { return json(res, 502, { error: error.publicMessage ? error.message : error.name === 'TimeoutError' ? '이미지 생성 시간이 초과됐습니다. 다시 시도해 주세요.' : error.message === 'fetch failed' ? 'AI 서비스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.' : '스타일을 생성하지 못했습니다. 사진 또는 서버 API 설정을 확인하고 다시 시도해 주세요.' }); }
     finally { active--; }
   }
   if (req.url?.startsWith('/api/')) return json(res, 404, { error: 'API를 찾을 수 없습니다.' });
