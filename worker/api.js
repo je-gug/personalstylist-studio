@@ -24,7 +24,7 @@ export async function handleStyle(request, env) {
     active++;
     try {
       let size = 0; const chunks = [];
-      for await (const chunk of request.body || []) { size += chunk.length; if (size > 8 * 1024 * 1024) { json(413, { error: '사진이 너무 큽니다. 더 작은 사진을 선택해 주세요.' }); return; } chunks.push(chunk); }
+      for await (const chunk of request.body || []) { size += chunk.length; if (size > 8 * 1024 * 1024) { return json(413, { error: '사진이 너무 큽니다. 더 작은 사진을 선택해 주세요.' }); } chunks.push(chunk); }
       let body; try { body = JSON.parse(await new Blob(chunks).text()); } catch { return json(400, { error: '잘못된 요청입니다.' }); }
       if (body.consent !== true || typeof body.image !== 'string' || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(body.image)) return json(400, { error: '사진과 AI 전송 동의를 확인해 주세요.' });
       const analysis = await openai('chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({

@@ -16,7 +16,6 @@ async function prepare(file) {
 }
 export default function App() {
   const [photo, setPhoto] = useState('');
-  const [consent, setConsent] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -30,14 +29,14 @@ export default function App() {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setError('JPG, PNG, WEBP 사진을 선택해 주세요.'); return; }
     if (file.size > 10 * 1024 * 1024) { setError('10MB 이하의 사진을 선택해 주세요.'); return; }
     const id = ++generation.current;
-    try { const src = await prepare(file); if (generation.current === id) { setPhoto(src); setResult(null); setConsent(false); } }
+    try { const src = await prepare(file); if (generation.current === id) { setPhoto(src); setResult(null); } }
     catch { setError('사진을 읽을 수 없습니다. 다른 사진을 선택해 주세요.'); }
   }
-  function clear() { generation.current++; setPhoto(''); setResult(null); setConsent(false); setError(''); if (fileInput.current) fileInput.current.value = ''; }
+  function clear() { generation.current++; setPhoto(''); setResult(null); setError(''); if (fileInput.current) fileInput.current.value = ''; }
   async function generate() {
     setBusy(true); setError('');
     try {
-      const response = await fetch('/api/style', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: photo, consent }) });
+      const response = await fetch('/api/style', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: photo, consent: true }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '생성하지 못했습니다. 잠시 후 다시 시도해 주세요.');
       setResult(data); setSelected(data.best);
@@ -57,7 +56,7 @@ export default function App() {
   return <div className="site">
     <header className="header"><a className="brand" href="/">mood<span>hair</span><i>✳</i></a><span className="header-label">PERSONAL HAIR STUDIO</span><span className="private"><span/> 개인정보 입력 없이</span></header>
     <main>
-      <section className="intro"><div className="eyebrow">A LITTLE CHANGE, A NEW YOU</div><h1>나에게 어울리는 머리,<br/><em>사진 한 장으로 발견하세요.</em></h1><p>새로운 나를 만나는 8가지 가능성.<br className="mobile"/> 내 사진으로 미리 보고, 가장 잘 어울리는 스타일을 찾아보세요.</p></section>
+      <section className="intro"><div className="eyebrow">A LITTLE CHANGE, A NEW YOU</div><h1>나에게 어울리는 머리,<br/><em>사진 한 장으로 발견하세요.</em></h1><p>새로운 나를 만나는 8가지 가능성.<br className="mobile"/> 로그인 없이 사진 한 장과 버튼 한 번으로, 나에게 어울리는 8가지 스타일을 만나보세요.</p></section>
       <div className="workspace">
         <aside className="upload-panel"><div className="section-label"><span>01</span> 나의 사진</div><h2>변화의 시작은<br/>사진 한 장이면 충분해요.</h2><p className="muted">얼굴과 머리가 잘 보이는 정면 사진을 준비해 주세요.</p>
           <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" id="photo" className="sr-only" disabled={busy} onChange={e => choose(e.target.files?.[0])}/>
@@ -65,8 +64,8 @@ export default function App() {
             {photo ? <><img src={photo} alt="선택한 원본 사진"/><span className="replace">사진 바꾸기 ↗</span></> : <><span className="upload-icon">↥</span><strong>사진을 여기에 놓아주세요</strong><span>또는 클릭해서 사진 선택</span><small>JPG, PNG, WEBP · 최대 10MB</small></>}
           </label>
           <div className="photo-tips"><span>✓ 정면을 바라본 사진</span><span>✓ 밝고 선명한 사진</span></div>
-          <label className="consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} disabled={busy}/><span>사진을 AI 서비스(OpenAI)에 전송하여 스타일을 생성하는 데 동의합니다.</span></label>
-          <button className="primary" disabled={!photo || !consent || busy} onClick={generate}>{busy ? <><span className="spinner"/> 스타일을 디자인하고 있어요…</> : <>나의 헤어스타일 찾기 <span>↗</span></>}</button>
+          <p className="consent">버튼을 누르면 사진이 OpenAI로 전송되어 8가지 헤어스타일과 가장 어울리는 스타일을 자동으로 생성합니다.</p>
+          <button className="primary" disabled={!photo || busy} onClick={generate}>{busy ? <><span className="spinner"/> 스타일을 디자인하고 있어요…</> : <>나의 헤어스타일 찾기 <span>↗</span></>}</button>
           {busy && <p className="waiting" role="status">사진 분석과 이미지 생성에 몇 분 걸릴 수 있어요.</p>}
           {error && <p className="error" role="alert">{error}</p>}
           <div className="privacy-note"><span>♧</span><p><strong>이름도, 연락처도 필요 없어요.</strong>사진은 앱 서버에 파일로 저장하지 않습니다. AI 처리 중에는 OpenAI의 데이터 정책이 적용됩니다.</p></div>
@@ -88,7 +87,7 @@ export default function App() {
           {result ? <div className="recommendation"><div className="rec-icon">✦</div><div><span className="eyebrow">{selected === result.best ? 'YOUR BEST MATCH' : 'STYLE DETAILS'}</span><h3>{styles[selected].name}</h3><p>{styles[selected].reason}</p><small>AI의 미적 제안으로, 실제 시술 결과와 다를 수 있어요.</small></div><button onClick={download} className="download">보드 저장 ↓</button></div> : <div className="empty-recommendation"><span>✦</span><div><strong>8가지 중, 나를 가장 빛나게 하는 하나.</strong><p>생성 후 가장 잘 어울리는 스타일과 추천 이유를 알려드려요.</p></div></div>}
         </section>
       </div>
-      <section className="steps"><div><span>01 / UPLOAD</span><h3>내 사진 한 장</h3><p>개인정보 입력 없이 사진만 선택하세요.</p></div><div><span>02 / DISCOVER</span><h3>8가지 새로운 스타일</h3><p>나의 얼굴은 그대로, 헤어스타일만 새롭게.</p></div><div><span>03 / FIND YOUR MOOD</span><h3>가장 나다운 선택</h3><p>추천 이유를 확인하고 보드를 저장하세요.</p></div></section>
+      <section className="steps"><div><span>01 / UPLOAD</span><h3>내 사진 한 장</h3><p>로그인이나 개인정보 입력 없이 사진만 선택하세요.</p></div><div><span>02 / DISCOVER</span><h3>8가지 새로운 스타일</h3><p>나의 얼굴은 그대로, 헤어스타일만 새롭게.</p></div><div><span>03 / FIND YOUR MOOD</span><h3>가장 나다운 선택</h3><p>추천 이유를 확인하고 보드를 저장하세요.</p></div></section>
     </main><footer><a className="brand" href="/">mood<span>hair</span><i>✳</i></a><p>작은 변화로 발견하는, 새로운 나.</p><span>YOUR NEXT LOOK STARTS HERE.</span></footer>
   </div>;
 }
