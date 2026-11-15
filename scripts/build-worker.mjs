@@ -11,9 +11,11 @@ async function collect(dir) {
 }
 await collect('dist');
 const api = await fs.readFile('worker/api.js', 'utf8');
-const source = api + `\nconst assets = ${JSON.stringify(files)};
+const share = await fs.readFile('worker/share.js', 'utf8');
+const source = api + '\n' + share + `\nconst assets = ${JSON.stringify(files)};
 export default { async fetch(request, env) {
  const url = new URL(request.url);
+ if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) { try { return await handleShare(request, env); } catch { return Response.json({error:'공유 저장소에 연결하지 못했습니다. 다시 시도해 주세요.'},{status:503}); } }
  if (url.pathname === '/api/style' && request.method === 'POST') return handleStyle(request, env);
  if (url.pathname.startsWith('/api/')) return Response.json({error:'API를 찾을 수 없습니다.'},{status:404});
  if (!['GET','HEAD'].includes(request.method)) return new Response('Method not allowed',{status:405});

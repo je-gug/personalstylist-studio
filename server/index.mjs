@@ -1,8 +1,17 @@
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { handleShare } from '../worker/share.js';
+
+// Local equivalent of the hosted R2 bucket; never committed to source control.
+const shareDirectory = fileURLToPath(new URL('../.local-shares/', import.meta.url));
+const localBucket = {
+  async put(key, value) { await mkdir(shareDirectory, { recursive: true }); await writeFile(path.join(shareDirectory, key.slice(7)), value, { mode: 0o600 }); },
+  async get(key) { try { const text = await readFile(path.join(shareDirectory, key.slice(7)), 'utf8'); return { json: async () => JSON.parse(text) }; } catch(e) { if (e.code === 'ENOENT') return null; throw e; } },
+  async delete(key) { await unlink(path.join(shareDirectory, key.slice(7))).catch(e => { if (e.code !== 'ENOENT') throw e; }); },
+};
 const root = fileURLToPath(new URL('../dist/', import.meta.url));
 const port = Number(process.env.PORT || 3001);
 let active = 0;
@@ -23,6 +32,14 @@ async function openai(endpoint, options) {
   return data;
 }
 export const server = http.createServer(async (req, res) => {
+  if (req.url === '/api/share' || req.url?.startsWith('/api/share/')) {
+    try {
+      const request = new Request(`http://${req.headers.host}${req.url}`, { method: req.method, headers: req.headers, ...(!['GET', 'HEAD'].includes(req.method) ? { body: req, duplex: 'half' } : {}) });
+      const response = await handleShare(request, { BUCKET: localBucket });
+      res.writeHead(response.status, Object.fromEntries(response.headers)); res.end(Buffer.from(await response.arrayBuffer()));
+    } catch { json(res, 503, { error: '공유 저장소에 연결하지 못했습니다. 다시 시도해 주세요.' }); }
+    return;
+  }
   if (req.url === '/api/style' && req.method === 'POST') {
     if (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) return json(res, 403, { error: '허용되지 않은 요청입니다.' });
     if (!process.env.OPENAI_API_KEY) return json(res, 503, { error: '아직 AI 생성 서비스가 연결되지 않았어요. 운영자가 서버에 OPENAI_API_KEY를 설정하면 사용할 수 있습니다.' });
