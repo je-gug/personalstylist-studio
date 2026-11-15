@@ -12,7 +12,7 @@ const localBucket = {
   async get(key) { try { const text = await readFile(path.join(shareDirectory, key.slice(7)), 'utf8'); return { json: async () => JSON.parse(text) }; } catch(e) { if (e.code === 'ENOENT') return null; throw e; } },
   async delete(key) { await unlink(path.join(shareDirectory, key.slice(7))).catch(e => { if (e.code !== 'ENOENT') throw e; }); },
 };
-const root = fileURLToPath(new URL('../dist/', import.meta.url));
+const root = path.resolve(fileURLToPath(new URL('../dist/', import.meta.url)));
 const port = Number(process.env.PORT || 3001);
 let active = 0;
 const json = (res, status, data) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(data)); };
