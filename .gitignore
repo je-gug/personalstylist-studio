@@ -128,3 +128,7 @@ yarn-error.log*
 
 # Local shared result data
 .local-shares/
+
+# Keep every local environment file private; publish only the empty template.
+.env.*
+!.env.example
