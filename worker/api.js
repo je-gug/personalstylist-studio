@@ -23,7 +23,7 @@ async function callGemini(endpoint, payload, env) {
 
 export async function handleStyle(request, env) {
 
-    if (request.headers.get('origin') && new URL(request.headers.get('origin')).host !== new URL(request.url).host) return json(403, { error: '허용되지 않은 요청입니다.' });
+    if (request.headers.get('origin') && new URL(request.headers.get('origin')).host !== new URL(request.url).host && request.headers.get('origin') !== env.PAGES_ORIGIN) return json(403, { error: '허용되지 않은 요청입니다.' });
     if (!env.GEMINI_API_KEY) return json(503, { error: '아직 AI 생성 서비스가 연결되지 않았어요. 운영자가 서버에 GEMINI_API_KEY를 설정하면 사용할 수 있습니다.' });
     if (active >= 2) return json(429, { error: '현재 다른 사진을 생성 중입니다. 잠시 후 다시 시도해 주세요.' });
     active++;

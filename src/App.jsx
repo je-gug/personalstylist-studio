@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 const suggestions = ['소프트 레이어드', '내추럴 보브', '커튼 뱅', '텍스처 숏컷', '미디엄 웨이브', '슬릭 스트레이트', '볼륨 펌', '프렌치 보브'];
+const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const positions = [0, 1, 2, 3, 5, 6, 7, 8];
 function loadImage(src) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = src; }); }
 async function prepare(file) {
@@ -34,7 +35,7 @@ export default function App() {
     if (!id) return;
     let cancelled = false;
     setBusy(true);
-    fetch(`/api/share/${encodeURIComponent(id)}`).then(async response => {
+    fetch(`${apiBase}/api/share/${encodeURIComponent(id)}`).then(async response => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '공유 결과를 불러오지 못했습니다.');
       if (!cancelled) { setResult(data); setSelected(data.selected); setShared(true); setShareUrl(window.location.href); }
@@ -51,11 +52,11 @@ export default function App() {
     try { const src = await prepare(file); if (generation.current === id) { setPhoto(src); setResult(null); resetSharing(); } }
     catch { setError('사진을 읽을 수 없습니다. 다른 사진을 선택해 주세요.'); }
   }
-  function clear() { generation.current++; setPhoto(''); setResult(null); resetSharing(); setError(''); window.history.replaceState(null, '', '/'); if (fileInput.current) fileInput.current.value = ''; }
+  function clear() { generation.current++; setPhoto(''); setResult(null); resetSharing(); setError(''); window.history.replaceState(null, '', import.meta.env.BASE_URL); if (fileInput.current) fileInput.current.value = ''; }
   async function generate() {
     setBusy(true); setError(''); resetSharing();
     try {
-      const response = await fetch('/api/style', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: photo, consent: true }) });
+      const response = await fetch(`${apiBase}/api/style`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: photo, consent: true }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '생성하지 못했습니다. 잠시 후 다시 시도해 주세요.');
       setResult(data); setSelected(data.best);
@@ -92,7 +93,7 @@ export default function App() {
     setShareBusy(true); setError('');
     try {
       const canvas = await boardCanvas();
-      const response = await fetch('/api/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: canvas.toDataURL('image/jpeg', 0.88), styles: result.styles, best: result.best, selected, consent: true }) });
+      const response = await fetch(`${apiBase}/api/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: canvas.toDataURL('image/jpeg', 0.88), styles: result.styles, best: result.best, selected, consent: true }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '공유 링크를 만들지 못했습니다.');
       setShareUrl(data.url); setNotice('공유 링크를 만들었습니다. 7일 동안 열어볼 수 있어요.');

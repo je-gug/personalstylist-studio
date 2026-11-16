@@ -15,6 +15,19 @@ const share = await fs.readFile('worker/share.js', 'utf8');
 const source = api + '\n' + share + `\nconst assets = ${JSON.stringify(files)};
 export default { async fetch(request, env) {
  const url = new URL(request.url);
+ if (url.pathname.startsWith('/api/')) {
+   const origin = request.headers.get('origin');
+   const trusted = origin === env.PAGES_ORIGIN;
+   if (request.method === 'OPTIONS') return new Response(null, { status: trusted ? 204 : 403, headers: trusted ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' } : {} });
+   let response;
+   try {
+     if (url.pathname === '/api/style' && request.method === 'POST') response = await handleStyle(request, env);
+     else if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) response = await handleShare(request, env);
+     else response = Response.json({error:'API를 찾을 수 없습니다.'},{status:404});
+   } catch { response = Response.json({error:'서비스에 연결하지 못했습니다.'},{status:503}); }
+   if (trusted) { response = new Response(response.body, response); response.headers.set('Access-Control-Allow-Origin', origin); response.headers.set('Vary', 'Origin'); }
+   return response;
+ }
  if (url.pathname === '/api/share' || url.pathname.startsWith('/api/share/')) { try { return await handleShare(request, env); } catch { return Response.json({error:'공유 저장소에 연결하지 못했습니다. 다시 시도해 주세요.'},{status:503}); } }
  if (url.pathname === '/api/style' && request.method === 'POST') return handleStyle(request, env);
  if (url.pathname.startsWith('/api/')) return Response.json({error:'API를 찾을 수 없습니다.'},{status:404});

@@ -4,7 +4,7 @@ export async function handleShare(request, env) {
   const url = new URL(request.url);
   if (!env.BUCKET) return reply(503, { error: '공유 저장소가 연결되지 않았습니다.' });
   if (request.method === 'POST' && url.pathname === '/api/share') {
-    if (request.headers.get('origin') !== url.origin) return reply(403, { error: '허용되지 않은 요청입니다.' });
+    if (request.headers.get('origin') !== url.origin && request.headers.get('origin') !== env.PAGES_ORIGIN) return reply(403, { error: '허용되지 않은 요청입니다.' });
     let size = 0; const chunks = [];
     for await (const chunk of request.body || []) {
       size += chunk.length;
