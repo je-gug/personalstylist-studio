@@ -16,6 +16,7 @@ test('returns eight styles and the selected best match from Gemini', async () =>
   expect(response.status).toBe(200);
   const data = await response.json();
   expect(data.styles).toHaveLength(8); expect(data.best).toBe(3); expect(data.image).toBe('data:image/png;base64,cGljdHVyZQ==');
+  expect(fetch.mock.calls[0][0]).toContain('models/gemini-3.8-flash:generateContent');
   expect(fetch.mock.calls.every(([url]) => url.startsWith('https://generativelanguage.googleapis.com/'))).toBe(true);
   expect(JSON.parse(fetch.mock.calls[1][1].body)).toMatchObject({ model: 'gemini-nano-banana-2.1', store: false, input: [ { type: 'text' }, { type: 'image', data: '/9j/', mime_type: 'image/jpeg' } ], response_format: { type: 'image', aspect_ratio: '1:1' } });
 });

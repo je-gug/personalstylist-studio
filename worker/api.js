@@ -14,7 +14,8 @@ async function callGemini(endpoint, payload, env) {
       404: 'Gemini 모델을 사용할 수 없습니다. 운영자가 모델 설정을 확인해 주세요.',
       429: 'Gemini 사용 한도 또는 요청 제한에 도달했습니다. 잠시 후 다시 시도해 주세요.',
     };
-    const error = new Error(messages[response.status] || 'Gemini에서 사진을 처리하지 못했습니다. 다시 시도해 주세요.');
+    const blocked = ['image_recitation', 'image_safety', 'content_filter'].includes(data.error?.code);
+    const error = new Error((blocked ? 'Gemini가 이 사진의 이미지 생성을 제한했습니다. 다른 사진으로 다시 시도해 주세요.' : messages[response.status]) || 'Gemini에서 사진을 처리하지 못했습니다. 다시 시도해 주세요.');
     error.publicMessage = true;
     throw error;
   }
@@ -33,7 +34,7 @@ export async function handleStyle(request, env) {
       let body; try { body = JSON.parse(await new Blob(chunks).text()); } catch { return json(400, { error: '잘못된 요청입니다.' }); }
       if (body.consent !== true || typeof body.image !== 'string' || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(body.image)) return json(400, { error: '사진과 AI 전송 동의를 확인해 주세요.' });
       const reference = { mimeType: 'image/jpeg', data: body.image.split(',')[1] };
-      const analysis = await callGemini(`models/${env.GEMINI_VISION_MODEL || 'gemini-2.5-flash'}:generateContent`, {
+      const analysis = await callGemini(`models/${env.GEMINI_VISION_MODEL || 'gemini-3.8-flash'}:generateContent`, {
         contents: [{ role: 'user', parts: [{ text: 'You are a hairstylist. Only discuss visible hair, face proportions, and styling, never identity or sensitive traits. If the image is not a clear single human portrait, set valid=false, styles=[], best=0. Otherwise propose exactly 8 distinct realistic hairstyles suitable for the person, avoiding gender assumptions. Write names and reasons in Korean. Each reason explains styling balance and maintenance. The recommendation is subjective. best is a zero-based index. edit is a concise English image-edit instruction for the hairstyle.' }, { inlineData: reference }] }],
         generationConfig: { responseMimeType: 'application/json', responseSchema: {
           type: 'OBJECT', properties: { valid: { type: 'BOOLEAN' }, best: { type: 'INTEGER' }, styles: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, reason: { type: 'STRING' }, edit: { type: 'STRING' } }, required: ['name', 'reason', 'edit'] } } }, required: ['valid', 'best', 'styles'],
