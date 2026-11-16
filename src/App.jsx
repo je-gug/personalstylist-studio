@@ -119,11 +119,11 @@ export default function App() {
             {photo ? <><img src={photo} alt="선택한 원본 사진"/><span className="replace">사진 바꾸기 ↗</span></> : <><span className="upload-icon">↥</span><strong>사진을 여기에 놓아주세요</strong><span>또는 클릭해서 사진 선택</span><small>JPG, PNG, WEBP · 최대 10MB</small></>}
           </label>
           <div className="photo-tips"><span>✓ 정면을 바라본 사진</span><span>✓ 밝고 선명한 사진</span></div>
-          <p className="consent">버튼을 누르면 사진이 OpenAI로 전송되어 8가지 헤어스타일과 가장 어울리는 스타일을 자동으로 생성합니다.</p>
+          <p className="consent">버튼을 누르면 사진이 Google Gemini로 전송되어 8가지 헤어스타일과 가장 어울리는 스타일을 자동으로 생성합니다.</p>
           <button className="primary" disabled={!photo || busy || shareBusy} onClick={generate}>{busy ? <><span className="spinner"/> 스타일을 디자인하고 있어요…</> : <>나의 헤어스타일 찾기 <span>↗</span></>}</button>
           {busy && <p className="waiting" role="status">사진 분석과 이미지 생성에 몇 분 걸릴 수 있어요.</p>}
           {error && <p className="error" role="alert">{error}</p>}
-          <div className="privacy-note"><span>♧</span><p><strong>이름도, 연락처도 필요 없어요.</strong>사진과 결과는 공유 링크를 만들 때만 서버에 저장됩니다. AI 처리 중에는 OpenAI의 데이터 정책이 적용됩니다.</p></div>
+          <div className="privacy-note"><span>♧</span><p><strong>이름도, 연락처도 필요 없어요.</strong>사진과 결과는 공유 링크를 만들 때만 서버에 저장됩니다. AI 처리 중에는 Google Gemini의 데이터 정책이 적용됩니다.</p></div>
           {(photo || shared) && <button className="clear" onClick={clear} disabled={busy || shareBusy}>사진과 결과 지우기</button>}
         </aside>
         <section className="result-panel"><div className="result-heading"><div><div className="section-label"><span>02</span> 나의 스타일 보드</div><h2>같은 나, 새로운 분위기.</h2></div><span className="count">8 STYLES + YOU</span></div>
